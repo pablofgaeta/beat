@@ -5,8 +5,10 @@ var hihatRect;
 var cowbellRect;
 var congaRect;
 
-// all button info
+// all slider info
 var snareSlider, hihatSlider, cowbellSlider, congaSlider;
+var autoSnare = JSON.parse(localStorage.getItem('autoSnare')), autoHihat=JSON.parse(localStorage.getItem('autoHihat')), autoCowbell=JSON.parse(localStorage.getItem('autoCowbell')), autoConga=JSON.parse(localStorage.getItem('autoConga'));
+var input;
 
 //all drum info
 var drums = {
@@ -31,13 +33,37 @@ function preload() {
 	drums.kick.amp(.5); drums.snare.amp(.2); drums.hihat.amp(.1); drums.cowbell.amp(.1); drums.conga.amp(.1);
 
 	snareQ = new Inputs('Snare Multiplier: ' + snareCount, 5, 1);
-	snareSlider = createSlider(0,13,snareCount,1); snareSlider.position(windowWidth/5+10,50); snareSlider.size(windowWidth/5-20, AUTO);
+	snareSlider = createSlider(0,13,snareCount,1); snareSlider.position(windowWidth/5+10,50); snareSlider.size(windowWidth/5-20, AUTO); snareSlider.changed(checkSnareChange);
 	hihatQ = new Inputs('Hihat Multiplier: ' + hihatCount, 5, 2);
-	hihatSlider = createSlider(0,13,hihatCount,1); hihatSlider.position(2*windowWidth/5+10,50); hihatSlider.size(windowWidth/5-20, AUTO);
+	hihatSlider = createSlider(0,13,hihatCount,1); hihatSlider.position(2*windowWidth/5+10,50); hihatSlider.size(windowWidth/5-20, AUTO); hihatSlider.changed(checkHihatChange);
 	cowbellQ = new Inputs('Cowbell Multiplier: ' + cowbellCount, 5, 3);
-	cowbellSlider = createSlider(0,13,cowbellCount,1); cowbellSlider.position(3*windowWidth/5+10,50); cowbellSlider.size(windowWidth/5-20, AUTO);
+	cowbellSlider = createSlider(0,13,cowbellCount,1); cowbellSlider.position(3*windowWidth/5+10,50); cowbellSlider.size(windowWidth/5-20, AUTO); cowbellSlider.changed(checkCowbellChange);
 	congaQ = new Inputs('Conga Multiplier: ' + congaCount, 5, 4);
-	congaSlider = createSlider(0,13,congaCount,1); congaSlider.position(4*windowWidth/5+10,50); congaSlider.size(windowWidth/5-20, AUTO);
+	congaSlider = createSlider(0,13,congaCount,1); congaSlider.position(4*windowWidth/5+10,50); congaSlider.size(windowWidth/5-20, AUTO); congaSlider.changed(checkCongaChange);
+}
+
+function checkCongaChange(){
+	if(congaSlider.value() == 0) {congaCount = 1; autoConga = false;}
+	else {congaCount = congaSlider.value(); autoConga = true;}
+	congaQ.greeting.html('Conga Multiplier: ' + congaSlider.value());
+}
+
+function checkCowbellChange(){
+	if(cowbellSlider.value() == 0) {cowbellCount = 1; autoCowbell = false;}
+	else {cowbellCount = cowbellSlider.value(); autoCowbell = true;}
+	cowbellQ.greeting.html('Cowbell Multiplier: ' + cowbellSlider.value());
+}
+
+function checkHihatChange(){
+	if(hihatSlider.value() == 0) {hihatCount = 1; autoHihat = false;}
+	else {hihatCount = hihatSlider.value(); autoHihat = true;}
+	hihatQ.greeting.html('Hihat Multiplier: ' + hihatSlider.value());
+}
+
+function checkSnareChange(){
+	if(snareSlider.value() == 0) {snareCount = 1; autoSnare = false;}
+	else {snareCount = snareSlider.value(); autoSnare = true;}
+	snareQ.greeting.html('Snare Multiplier: ' + snareSlider.value());
 }
 
 function setup() {
@@ -52,23 +78,25 @@ function setup() {
 	cowbellRect = rect(3 * windowWidth/5,0,windowWidth/5,windowHeight);
 	congaRect = rect(4 * windowWidth/5,0,windowWidth/5,windowHeight);
 	makeText();
+
+	input = createInput();
+	input.position(20, 200);
+
+	submitButton = createButton('submit');
+	submitButton.position(input.x + input.width, 200);
+	submitButton.mousePressed(function() {kbn = int(input.value());})
 }
 
 function draw() {
-	snareCount = snareSlider.value();
-	hihatCount = hihatSlider.value();
-	cowbellCount = cowbellSlider.value();
-	congaCount = congaSlider.value();
-	snareQ.greeting.html('Snare Multiplier: ' + snareCount);
-	hihatQ.greeting.html('Hihat Multiplier: ' + hihatCount);
-	cowbellQ.greeting.html('Cowbell Multiplier: ' + cowbellCount);
-	congaQ.greeting.html('Conga Multiplier: ' + congaCount);
-
 	if (typeof(Storage) !== undefined){
 	localStorage.setItem("author", "Pablo Gaeta");
+	localStorage.setItem("autoSnare", autoSnare);
 	localStorage.setItem("snareCount", snareCount);
+	localStorage.setItem("autoHihat", autoHihat);
 	localStorage.setItem("hihatCount", hihatCount);
+	localStorage.setItem("autoCowbell", autoCowbell);
 	localStorage.setItem("cowbellCount", cowbellCount);
+	localStorage.setItem("autoConga", autoConga);
 	localStorage.setItem("congaCount", congaCount);
 	}
 	else {
@@ -109,7 +137,8 @@ function keyPressed(){
 	if(keyCode == 68){drums.hihat.play(); fill(random(255), random(255), random(255)); makeRect('hihat');}
 	if(keyCode == 70){drums.cowbell.play(); fill(random(255), random(255), random(255)); makeRect('cowbell');}
 	if(keyCode == 71){drums.conga.play(); fill(random(255), random(255), random(255)); makeRect('conga');}
-	if(keyCode == 13){goog();}
+	if(keyCode == 13){kbn = math.lcm(snareCount,hihatCount,cowbellCount,congaCount); goog();}
+	if(keyCode == 80){goog();}
 	if(keyCode == 27){location.reload();}
 }
 
@@ -118,15 +147,13 @@ function goog() {
 	var hihatMult = hihatCount / 4;
 	var cowbellMult = cowbellCount / 4;
 	var congaMult = congaCount / 4;
-//number of kick beats
-	kbn = math.lcm(snareCount,hihatCount,cowbellCount,congaCount);
 	drums.kick.play();
 	changeKick();
 	for(var i = 0; i < kbn; i++){
 		drums.kick.play(.5*(i+1));
 		var dis = setTimeout(changeKick, 500*(i+1));
 	}
-	if(snareCount > 0) {
+	if(autoSnare) {
 		drums.snare.play();
 		changeSnare();
 		for(var i = 0; i < kbn / snareMult; i++){
@@ -134,7 +161,7 @@ function goog() {
 			var sis = setTimeout(changeSnare, (500. * snareMult)*(i+1));
 		}
 	}
-	if(hihatCount > 0){
+	if(autoHihat){
 		drums.hihat.play();
 		changeHihat();
 		for(var i = 0; i < kbn / hihatMult; i++){
@@ -142,7 +169,7 @@ function goog() {
 			var his = setTimeout(changeHihat, (500. * hihatMult)*(i+1));
 		}
 	}
-	if(cowbellCount > 0){
+	if(autoCowbell){
 		drums.cowbell.play();
 		changeCowbell();
 		for(var i = 0; i < kbn / cowbellMult; i++){
@@ -150,7 +177,7 @@ function goog() {
 			var cis = setTimeout(changeCowbell, (500. * cowbellMult)*(i+1));
 		}
 	}
-	if(congaCount > 0){
+	if(autoConga){
 		for(var i = 0; i < kbn / congaMult; i++){
 			drums.conga.play((.5 * congaMult)*(i+1));
 			var cis = setTimeout(changeConga, (500. * congaMult)*(i+1));
@@ -177,3 +204,4 @@ function changeCowbell() {
 function changeConga() {
 	fill(random(255), random(255), random(255)); makeRect('conga');
 }
+
